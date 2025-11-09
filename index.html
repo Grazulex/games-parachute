@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parachute - Nintendo Game & Watch (1981)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+
+        .game-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .game-watch {
+            background: linear-gradient(145deg, #e6dfc0, #c9c2a5);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow:
+                0 20px 60px rgba(0,0,0,0.4),
+                inset 0 2px 10px rgba(255,255,255,0.3);
+            border: 3px solid #8b7355;
+            position: relative;
+        }
+
+        .nintendo-logo {
+            text-align: center;
+            font-size: 12px;
+            color: #8b7355;
+            margin-bottom: 10px;
+            font-weight: bold;
+            letter-spacing: 3px;
+        }
+
+        .title {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #2a2a1a;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.5);
+            letter-spacing: 2px;
+        }
+
+        .game-mode {
+            text-align: center;
+            font-size: 14px;
+            color: #4a4a3a;
+            margin-bottom: 10px;
+        }
+
+        .screen-container {
+            background: #2a2a1a;
+            border: 4px solid #1a1a0f;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.8);
+            position: relative;
+        }
+
+        #gameCanvas {
+            display: block;
+            background: #c8c3a0;
+            border: 2px solid #5a4a3a;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            position: relative;
+        }
+
+        .canvas-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+
+        .lcd-info {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            font-size: 10px;
+            color: #1a1a0f;
+            opacity: 0.6;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .info-panel {
+            background: rgba(42, 42, 26, 0.1);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            position: relative;
+        }
+
+        .info-panel .label {
+            font-size: 11px;
+            opacity: 0.7;
+            color: #2a2a1a;
+            margin-bottom: 5px;
+        }
+
+        .info-panel .value {
+            font-size: 32px;
+            margin-top: 5px;
+            color: #2a2a1a;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+
+        .info-panel.highlight {
+            animation: pulse 0.5s ease;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); background: rgba(255, 215, 0, 0.2); }
+        }
+
+        .buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+            padding-bottom: 25px;
+        }
+
+        button {
+            background: linear-gradient(145deg, #4a4a3a, #3a3a2a);
+            border: 2px solid #2a2a1a;
+            border-radius: 50%;
+            width: 65px;
+            height: 65px;
+            color: white;
+            font-weight: bold;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: all 0.1s;
+            position: relative;
+        }
+
+        button:hover {
+            background: linear-gradient(145deg, #5a5a4a, #4a4a3a);
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        button .label {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 9px;
+            color: #2a2a1a;
+            white-space: nowrap;
+        }
+
+        .instructions {
+            margin-top: 25px;
+            text-align: center;
+            font-size: 11px;
+            color: #2a2a1a;
+            opacity: 0.8;
+            line-height: 1.6;
+        }
+
+        /* Panneau latéral */
+        .side-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            max-width: 300px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .side-panel h2 {
+            margin: 0 0 20px 0;
+            color: #667eea;
+            font-size: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 13px;
+        }
+
+        .stat-value {
+            color: #333;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .achievement {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .achievement.locked {
+            background: #e0e0e0;
+            opacity: 0.5;
+        }
+
+        .achievement-icon {
+            font-size: 24px;
+        }
+
+        .achievement-text {
+            flex: 1;
+        }
+
+        .achievement-title {
+            font-size: 12px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .achievement-desc {
+            font-size: 10px;
+            color: #666;
+        }
+
+        .settings-panel {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        .toggle-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 12px;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+
+        .toggle-button:hover {
+            background: #5568d3;
+        }
+
+        .toggle-button.active {
+            background: #4caf50;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .game-container {
+                flex-direction: column;
+            }
+
+            .side-panel {
+                max-width: 100%;
+            }
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4caf50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s ease, slideOut 0.3s ease 2.7s;
+            z-index: 1000;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(400px); opacity: 0; }
+        }
+
+        /* Scrollbar pour le panneau latéral */
+        .side-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .side-panel::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 10px;
+        }
+
+        .side-panel::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
+        }
+
+        .side-panel::-webkit-scrollbar-thumb:hover {
+            background: #5568d3;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- Console Game & Watch -->
+        <div class="game-watch">
+            <div class="nintendo-logo">NINTENDO®</div>
+            <div class="title">PARACHUTE</div>
+            <div class="game-mode">
+                <span id="gameModeDisplay">GAME A</span>
+            </div>
+
+            <div class="screen-container">
+                <div class="lcd-info">© 1981 Nintendo</div>
+                <canvas id="gameCanvas" width="450" height="233"></canvas>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-panel" id="scorePanel">
+                    <div class="label">SCORE</div>
+                    <div class="value" id="score">0</div>
+                </div>
+                <div class="info-panel" id="highScorePanel">
+                    <div class="label">HI-SCORE</div>
+                    <div class="value" id="highScore">0</div>
+                </div>
+                <div class="info-panel">
+                    <div class="label">MISS</div>
+                    <div class="value" id="misses">0</div>
+                </div>
+                <div class="info-panel">
+                    <div class="label">LEVEL</div>
+                    <div class="value" id="level">1</div>
+                </div>
+            </div>
+
+            <div class="buttons-grid">
+                <button id="btnLeft" title="Gauche">←<span class="label">LEFT</span></button>
+                <button id="btnGameMode" title="Changer de mode">A/B<span class="label">MODE</span></button>
+                <button id="btnRight" title="Droite">→<span class="label">RIGHT</span></button>
+                <button id="btnSound" title="Son On/Off">♪<span class="label">SOUND</span></button>
+                <button id="btnStart" title="Démarrer">▶<span class="label">START</span></button>
+                <button id="btnReset" title="Reset">↻<span class="label">RESET</span></button>
+            </div>
+
+            <div class="instructions">
+                <strong>Contrôles:</strong><br>
+                ← → : Déplacer le bateau | ESPACE/▶ : Start/Pause<br>
+                R : Reset | M : Changer mode | S : Son On/Off
+            </div>
+        </div>
+
+        <!-- Panneau latéral -->
+        <div class="side-panel">
+            <h2>📊 Statistiques</h2>
+            <div class="stat-item">
+                <span class="stat-label">Parties jouées</span>
+                <span class="stat-value" id="gamesPlayed">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Sauvés total</span>
+                <span class="stat-value" id="totalSaved">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Taux de réussite</span>
+                <span class="stat-value" id="successRate">0%</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Meilleur combo</span>
+                <span class="stat-value" id="bestCombo">0</span>
+            </div>
+
+            <h2 style="margin-top: 25px;">🏆 Achievements</h2>
+            <div id="achievementsList"></div>
+
+            <div class="settings-panel">
+                <h2>⚙️ Options</h2>
+                <button class="toggle-button" id="btnFullscreen">Plein écran</button>
+                <button class="toggle-button" id="btnResetStats">Reset Stats</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="sprites/parachute-sprites.js"></script>
+    <script src="sounds.js"></script>
+    <script src="game-ultra.js"></script>
+</body>
+</html>

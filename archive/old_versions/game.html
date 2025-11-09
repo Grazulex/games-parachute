@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parachute - Game & Watch (1981)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Courier New', monospace;
+        }
+
+        .game-watch {
+            background: linear-gradient(145deg, #e6dfc0, #c9c2a5);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow:
+                0 20px 60px rgba(0,0,0,0.4),
+                inset 0 2px 10px rgba(255,255,255,0.3);
+            border: 3px solid #8b7355;
+        }
+
+        .screen-container {
+            background: #2a2a1a;
+            border: 4px solid #1a1a0f;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.8);
+        }
+
+        #gameCanvas {
+            display: block;
+            background: #c8c3a0;
+            border: 2px solid #5a4a3a;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        .controls {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+            color: #2a2a1a;
+            font-weight: bold;
+        }
+
+        .info-panel {
+            background: rgba(42, 42, 26, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .info-panel .label {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        .info-panel .value {
+            font-size: 24px;
+            margin-top: 5px;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        button {
+            background: linear-gradient(145deg, #4a4a3a, #3a3a2a);
+            border: 2px solid #2a2a1a;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: all 0.1s;
+        }
+
+        button:hover {
+            background: linear-gradient(145deg, #5a5a4a, #4a4a3a);
+        }
+
+        button:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .instructions {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 12px;
+            color: #2a2a1a;
+            opacity: 0.8;
+        }
+
+        .title {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #2a2a1a;
+            font-size: 20px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-watch">
+        <div class="title">PARACHUTE</div>
+
+        <div class="screen-container">
+            <canvas id="gameCanvas" width="400" height="300"></canvas>
+        </div>
+
+        <div class="info">
+            <div class="info-panel">
+                <div class="label">SCORE</div>
+                <div class="value" id="score">0</div>
+            </div>
+            <div class="info-panel">
+                <div class="label">MISS</div>
+                <div class="value" id="misses">0</div>
+            </div>
+        </div>
+
+        <div class="buttons">
+            <button id="btnLeft" title="Déplacer à gauche">←</button>
+            <button id="btnStart" title="Démarrer/Pause">▶</button>
+            <button id="btnRight" title="Déplacer à droite">→</button>
+        </div>
+
+        <div class="instructions">
+            Utilisez ← → ou les boutons pour déplacer le bateau<br>
+            Attrapez les parachutistes !
+        </div>
+    </div>
+
+    <script src="sprites/parachute-sprites.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>

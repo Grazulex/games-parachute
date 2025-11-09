@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parachute - Game & Watch</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #2c2c2c;
+            padding: 20px;
+        }
+
+        .device {
+            background: linear-gradient(145deg, #e8dcc8, #d8cbb8);
+            border: 8px solid #6b4423;
+            border-radius: 12px;
+            padding: 20px 30px;
+            box-shadow:
+                0 8px 16px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4),
+                inset 0 -2px 5px rgba(0, 0, 0, 0.1);
+            max-width: 900px;
+            width: 100%;
+            position: relative;
+            aspect-ratio: 1.67;
+        }
+
+        .screen-container {
+            background: linear-gradient(145deg, #e8dcc8, #d8cbb8);
+            border: 3px solid #6b4423;
+            border-radius: 8px;
+            padding: 8px;
+            margin-bottom: 15px;
+            box-shadow:
+                inset 0 2px 4px rgba(0, 0, 0, 0.2),
+                0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .screen-frame {
+            background: linear-gradient(135deg, #4a4a3a, #3a3a2a);
+            border-radius: 5px;
+            padding: 8px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .screen {
+            background: linear-gradient(180deg, #a0b090 0%, #98a888 50%, #90a080 100%);
+            border: 2px solid #3a3a2a;
+            border-radius: 3px;
+            width: 100%;
+            aspect-ratio: 1.54;
+            position: relative;
+            overflow: hidden;
+            box-shadow:
+                inset 0 1px 3px rgba(0, 0, 0, 0.2),
+                inset 0 0 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .hud {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            color: #2a2a2a;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .lcd-time {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+        }
+
+        .lcd-score {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Affichage 7-segments pour le score */
+        .seven-segment-display {
+            display: inline-flex;
+            gap: 2px;
+        }
+
+        .seven-segment {
+            width: 20px;
+            height: 28px;
+            position: relative;
+            display: inline-block;
+        }
+
+        .segment {
+            position: absolute;
+            background: #2a2a2a;
+            opacity: 1;
+        }
+
+        .segment.off {
+            opacity: 0.1;
+        }
+
+        /* Segments horizontaux */
+        .seg-a, .seg-d, .seg-g {
+            width: 14px;
+            height: 3px;
+            left: 3px;
+        }
+
+        .seg-a { top: 0; }
+        .seg-d { bottom: 0; }
+        .seg-g { top: 12.5px; }
+
+        /* Segments verticaux */
+        .seg-b, .seg-c, .seg-e, .seg-f {
+            width: 3px;
+            height: 10px;
+        }
+
+        .seg-b { top: 3px; right: 0; }
+        .seg-c { bottom: 3px; right: 0; }
+        .seg-e { bottom: 3px; left: 0; }
+        .seg-f { top: 3px; left: 0; }
+
+        .game-canvas {
+            position: relative;
+            width: 100%;
+            height: calc(100% - 50px);
+        }
+
+        .sprite {
+            position: absolute;
+            transition: none;
+        }
+
+        /* LCD Sprite Style - segments LCD */
+        .lcd-segment {
+            fill: #2a2a2a;
+            opacity: 1;
+        }
+
+        .lcd-segment-shadow {
+            fill: #2a2a2a;
+            opacity: 0.15;
+        }
+
+        /* Hélicoptère LCD */
+        .helicopter {
+            top: 8%;
+            width: 50px;
+            height: 30px;
+        }
+
+        .helicopter.left { left: 8%; }
+        .helicopter.center { left: 47%; transform: translateX(-50%); }
+        .helicopter.right { right: 8%; }
+
+        /* Parachutiste LCD */
+        .parachutist {
+            width: 30px;
+            height: 35px;
+        }
+
+        /* Bateau LCD - 3 positions fixes, pas de transition */
+        .boat {
+            bottom: 20%;
+            width: 45px;
+            height: 30px;
+            transition: none !important;
+        }
+
+        .boat.left {
+            left: 15%;
+            right: auto;
+            transform: none;
+        }
+        .boat.center {
+            left: 50%;
+            right: auto;
+            transform: translateX(-50%);
+        }
+        .boat.right {
+            right: 15%;
+            left: auto;
+            transform: none;
+        }
+
+        /* Requin LCD */
+        .shark {
+            bottom: 8%;
+            width: 35px;
+            height: 20px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .shark.show { opacity: 1; }
+        .shark.left { left: 8%; }
+        .shark.center { left: 47%; transform: translateX(-50%); }
+        .shark.right { right: 8%; }
+
+        /* Palmiers */
+        .palm-tree {
+            position: absolute;
+            bottom: 15%;
+            width: 40px;
+            height: 60px;
+        }
+
+        .palm-tree.left { left: 2%; }
+        .palm-tree.right { right: 2%; }
+
+        .wave {
+            position: absolute;
+            bottom: 5%;
+            width: 100%;
+            height: 2px;
+            background: #2a2a2a;
+            opacity: 0.3;
+        }
+
+        .main-layout {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 5px;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .button {
+            background: linear-gradient(145deg, #d44040, #c03030);
+            color: white;
+            border: 3px solid #8a2020;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow:
+                0 3px 6px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            transition: all 0.1s;
+            font-weight: bold;
+        }
+
+        .button:active {
+            transform: translateY(2px);
+            box-shadow:
+                0 1px 3px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .button-label {
+            font-size: 9px;
+            color: #3a3a2a;
+            margin-top: 5px;
+            text-align: center;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+
+        .screen-and-controls {
+            flex: 1;
+        }
+
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(42, 42, 42, 0.9);
+            color: #9ca986;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+        }
+
+        .game-over.show {
+            display: block;
+        }
+
+        .game-over h2 {
+            font-size: 28px;
+            margin-bottom: 15px;
+        }
+
+        .game-over p {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .game-over button {
+            background: #9ca986;
+            color: #2a2a2a;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .title {
+            text-align: center;
+            color: #3a3a2a;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            opacity: 0.7;
+        }
+
+        .header-layout {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .left-branding {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 2px solid #3a3a2a;
+            padding: 8px 12px;
+            background: white;
+            border-radius: 3px;
+        }
+
+        .game-watch-text {
+            font-size: 14px;
+            font-weight: bold;
+            color: #000;
+            letter-spacing: -0.5px;
+            line-height: 1;
+            margin-bottom: 2px;
+        }
+
+        .game-watch-text .ampersand {
+            font-style: italic;
+        }
+
+        .nintendo-logo {
+            font-size: 10px;
+            font-weight: bold;
+            color: #000;
+            letter-spacing: 0.5px;
+        }
+
+        .right-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .mode-button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 10px;
+            font-weight: bold;
+            color: #3a3a2a;
+        }
+
+        .switch {
+            width: 35px;
+            height: 18px;
+            background: #3a3a2a;
+            border-radius: 9px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .switch::after {
+            content: '';
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background: #d4c4a8;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: left 0.2s;
+        }
+
+        .wide-screen-text {
+            text-align: center;
+            font-size: 11px;
+            font-weight: bold;
+            color: #3a3a2a;
+            margin-top: 5px;
+            letter-spacing: 2px;
+        }
+
+        @media (max-width: 600px) {
+            .device {
+                padding: 20px;
+            }
+
+            .button {
+                width: 50px;
+                height: 50px;
+                font-size: 18px;
+            }
+
+            .helicopter { font-size: 24px; }
+            .parachutist { font-size: 20px; }
+            .boat { font-size: 28px; }
+            .shark { font-size: 20px; }
+        }
+
+        .touch-area {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 50%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .touch-area.left { left: 0; }
+        .touch-area.right { right: 0; }
+    </style>
+</head>
+<body>
+    <div class="device">
+        <div class="header-layout">
+            <div class="left-branding">
+                <div class="game-watch-text">GAME <span class="ampersand">&</span> WATCH</div>
+                <div class="nintendo-logo">Nintendo</div>
+            </div>
+            <div class="right-controls">
+                <div class="mode-button">
+                    <span>GAME A</span>
+                    <div class="switch"></div>
+                    <span style="font-size: 8px;">ALARM</span>
+                </div>
+                <div class="mode-button">
+                    <span>GAME B</span>
+                    <div class="switch"></div>
+                    <span style="font-size: 8px;">ACL</span>
+                </div>
+                <div class="mode-button">
+                    <span>TIME</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="title">PARACHUTE</div>
+
+        <div class="main-layout">
+            <!-- LEFT BUTTON -->
+            <div class="controls">
+                <button class="button" onclick="game.moveBoat('left')">◄</button>
+                <div class="button-label">LEFT</div>
+            </div>
+
+            <!-- SCREEN -->
+            <div class="screen-and-controls">
+                <div class="screen-container">
+                    <div class="screen-frame">
+                        <div class="screen">
+                        <div class="hud">
+                            <div class="lcd-time">
+                                <span id="ampm" style="font-size: 12px;">AM</span>
+                                <span id="clock">12:00</span>
+                            </div>
+                            <div class="lcd-score">
+                                <div class="seven-segment-display" id="scoreDisplay"></div>
+                            </div>
+                        </div>
+                        <div class="game-canvas" id="gameCanvas">
+                            <!-- Helicopter LCD - Exactement comme l'original -->
+                            <svg class="sprite helicopter center" viewBox="0 0 45 22">
+                                <!-- Rotor au-dessus -->
+                                <rect class="lcd-segment" x="8" y="2" width="29" height="2"/>
+                                <!-- Corps principal rectangulaire -->
+                                <rect class="lcd-segment" x="16" y="6" width="13" height="9"/>
+                                <!-- Fenêtres (3 carrés) -->
+                                <rect class="lcd-segment" x="18" y="8" width="2.5" height="3"/>
+                                <rect class="lcd-segment" x="21" y="8" width="2.5" height="3"/>
+                                <rect class="lcd-segment" x="24" y="8" width="2.5" height="3"/>
+                                <!-- Patins -->
+                                <rect class="lcd-segment" x="18" y="16" width="2" height="3"/>
+                                <rect class="lcd-segment" x="25" y="16" width="2" height="3"/>
+                            </svg>
+
+                            <!-- Boat LCD - Bonhomme debout dans bateau -->
+                            <svg class="sprite boat center" id="boat" viewBox="0 0 30 22">
+                                <!-- Tête -->
+                                <circle class="lcd-segment" cx="15" cy="6" r="2"/>
+                                <!-- Bras (en forme de V inversé vers le haut) -->
+                                <path class="lcd-segment" stroke="#2a2a2a" stroke-width="1.5" fill="none" d="M 12,10 L 15,8 L 18,10"/>
+                                <!-- Corps -->
+                                <rect class="lcd-segment" x="14" y="8" width="2" height="6"/>
+                                <!-- Jambes écartées -->
+                                <path class="lcd-segment" stroke="#2a2a2a" stroke-width="1.5" fill="none" d="M 15,14 L 12,18 M 15,14 L 18,18"/>
+                                <!-- Bateau (ligne horizontale épaisse) -->
+                                <rect class="lcd-segment" x="6" y="17" width="18" height="3"/>
+                            </svg>
+
+                            <!-- Palm Trees LCD - Plus simples -->
+                            <svg class="palm-tree left" viewBox="0 0 35 70">
+                                <!-- Tronc brun -->
+                                <rect fill="#8b5a3c" x="14" y="30" width="7" height="40"/>
+                                <!-- Feuilles vertes -->
+                                <ellipse fill="#2d8659" cx="17" cy="25" rx="12" ry="15"/>
+                                <ellipse fill="#2d8659" cx="17" cy="28" rx="14" ry="12"/>
+                            </svg>
+                            <svg class="palm-tree right" viewBox="0 0 35 70">
+                                <!-- Tronc brun -->
+                                <rect fill="#8b5a3c" x="14" y="30" width="7" height="40"/>
+                                <!-- Feuilles vertes -->
+                                <ellipse fill="#2d8659" cx="17" cy="25" rx="12" ry="15"/>
+                                <ellipse fill="#2d8659" cx="17" cy="28" rx="14" ry="12"/>
+                            </svg>
+
+                            <!-- Sharks LCD - Plus simples -->
+                            <svg class="sprite shark left" id="shark-left" viewBox="0 0 30 15">
+                                <path class="lcd-segment" d="M 5,8 L 20,5 L 25,8 L 20,11 Z"/>
+                                <polygon class="lcd-segment" points="18,5 20,1 22,5"/>
+                            </svg>
+                            <svg class="sprite shark center" id="shark-center" viewBox="0 0 30 15">
+                                <path class="lcd-segment" d="M 5,8 L 20,5 L 25,8 L 20,11 Z"/>
+                                <polygon class="lcd-segment" points="18,5 20,1 22,5"/>
+                            </svg>
+                            <svg class="sprite shark right" id="shark-right" viewBox="0 0 30 15">
+                                <path class="lcd-segment" d="M 5,8 L 20,5 L 25,8 L 20,11 Z"/>
+                                <polygon class="lcd-segment" points="18,5 20,1 22,5"/>
+                            </svg>
+
+                            <!-- Vagues LCD - lignes ondulées cyan -->
+                            <svg style="position: absolute; bottom: 12%; left: 0; width: 100%; height: 40px;" viewBox="0 0 400 40">
+                                <path fill="none" stroke="#4ac4c4" stroke-width="3" d="M 0,10 Q 20,5 40,10 T 80,10 T 120,10 T 160,10 T 200,10 T 240,10 T 280,10 T 320,10 T 360,10 T 400,10"/>
+                                <path fill="none" stroke="#4ac4c4" stroke-width="3" d="M 0,20 Q 25,15 50,20 T 100,20 T 150,20 T 200,20 T 250,20 T 300,20 T 350,20 T 400,20"/>
+                                <path fill="none" stroke="#4ac4c4" stroke-width="2" d="M 0,28 Q 30,24 60,28 T 120,28 T 180,28 T 240,28 T 300,28 T 360,28 T 400,28"/>
+                            </svg>
+
+                            <!-- Touch areas for mobile -->
+                            <div class="touch-area left" id="touch-left"></div>
+                            <div class="touch-area right" id="touch-right"></div>
+                        </div>
+
+                        <!-- Game Over Screen -->
+                        <div class="game-over" id="gameOver">
+                            <h2>GAME OVER</h2>
+                            <p>Final Score: <span id="finalScore">0</span></p>
+                            <p>High Score: <span id="highScore">0</span></p>
+                            <button onclick="game.restart()">PLAY AGAIN</button>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="wide-screen-text">WIDE SCREEN</div>
+            </div>
+
+            <!-- RIGHT BUTTON -->
+            <div class="controls">
+                <button class="button" onclick="game.moveBoat('right')">►</button>
+                <div class="button-label">RIGHT</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mapping des chiffres 0-9 en segments 7
+        const SEGMENT_PATTERNS = {
+            '0': ['a', 'b', 'c', 'd', 'e', 'f'],
+            '1': ['b', 'c'],
+            '2': ['a', 'b', 'd', 'e', 'g'],
+            '3': ['a', 'b', 'c', 'd', 'g'],
+            '4': ['b', 'c', 'f', 'g'],
+            '5': ['a', 'c', 'd', 'f', 'g'],
+            '6': ['a', 'c', 'd', 'e', 'f', 'g'],
+            '7': ['a', 'b', 'c'],
+            '8': ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
+            '9': ['a', 'b', 'c', 'd', 'f', 'g']
+        };
+
+        function createSevenSegmentDigit(digit) {
+            const container = document.createElement('div');
+            container.className = 'seven-segment';
+
+            const segments = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
+            const activeSegments = SEGMENT_PATTERNS[digit] || [];
+
+            segments.forEach(seg => {
+                const segDiv = document.createElement('div');
+                segDiv.className = `segment seg-${seg}`;
+                if (!activeSegments.includes(seg)) {
+                    segDiv.classList.add('off');
+                }
+                container.appendChild(segDiv);
+            });
+
+            return container;
+        }
+
+        function updateSevenSegmentDisplay(value) {
+            const display = document.getElementById('scoreDisplay');
+            display.innerHTML = '';
+
+            // Afficher 3 chiffres (max 999)
+            const str = String(value).padStart(3, '0');
+            for (let char of str) {
+                display.appendChild(createSevenSegmentDigit(char));
+            }
+        }
+
+        function updateClock() {
+            const now = new Date();
+            let hours = now.getHours();
+            const minutes = now.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+
+            const timeStr = `${hours}:${String(minutes).padStart(2, '0')}`;
+            document.getElementById('clock').textContent = timeStr;
+            document.getElementById('ampm').textContent = ampm;
+        }
+
+        const game = {
+            score: 0,
+            lives: 3,
+            boatPosition: 'center',
+            parachutists: [],
+            nextId: 0,
+            gameLoop: null,
+            spawnLoop: null,
+            tickSpeed: 350,
+            gameOver: false,
+            highScore: localStorage.getItem('parachuteHighScore') || 0,
+            parachuteFrame: 0,
+
+            // Vertical positions (7 discrete levels)
+            positions: ['15%', '25%', '35%', '45%', '55%', '65%', '75%'],
+            lanes: ['left', 'center', 'right'],
+
+            init() {
+                this.updateDisplay();
+                this.startGame();
+                this.setupControls();
+                document.getElementById('highScore').textContent = this.highScore;
+
+                // Démarrer l'horloge
+                updateClock();
+                setInterval(updateClock, 1000);
+            },
+
+            setupControls() {
+                // Keyboard controls
+                this.handleKeydown = (e) => {
+                    if (this.gameOver && (e.key === ' ' || e.key === 'Enter')) {
+                        this.restart();
+                        return;
+                    }
+
+                    if (e.key === 'ArrowLeft') {
+                        if (this.boatPosition === 'center') this.moveBoat('left');
+                        else if (this.boatPosition === 'right') this.moveBoat('center');
+                    } else if (e.key === 'ArrowRight') {
+                        if (this.boatPosition === 'center') this.moveBoat('right');
+                        else if (this.boatPosition === 'left') this.moveBoat('center');
+                    } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                        // Return to center from any position
+                        if (this.boatPosition !== 'center') this.moveBoat('center');
+                    }
+                };
+
+                document.addEventListener('keydown', this.handleKeydown);
+
+                // Touch controls
+                document.getElementById('touch-left').addEventListener('click', () => {
+                    if (this.boatPosition === 'center') this.moveBoat('left');
+                    else if (this.boatPosition === 'right') this.moveBoat('center');
+                    else if (this.boatPosition === 'left') this.moveBoat('center');
+                });
+
+                document.getElementById('touch-right').addEventListener('click', () => {
+                    if (this.boatPosition === 'center') this.moveBoat('right');
+                    else if (this.boatPosition === 'left') this.moveBoat('center');
+                    else if (this.boatPosition === 'right') this.moveBoat('center');
+                });
+            },
+
+            moveBoat(position) {
+                if (this.gameOver) return;
+                this.boatPosition = position;
+                const boat = document.getElementById('boat');
+                // Pour les SVG, il faut utiliser setAttribute au lieu de className
+                boat.setAttribute('class', `sprite boat ${position}`);
+            },
+
+            startGame() {
+                this.gameLoop = setInterval(() => this.update(), this.tickSpeed);
+                this.spawnLoop = setInterval(() => this.spawnParachutist(), 2000);
+            },
+
+            spawnParachutist() {
+                if (this.gameOver) return;
+
+                const lane = this.lanes[Math.floor(Math.random() * this.lanes.length)];
+                const id = this.nextId++;
+
+                this.parachutists.push({
+                    id,
+                    lane,
+                    position: 0
+                });
+
+                this.createParachutistElement(id, lane);
+            },
+
+            createParachutistElement(id, lane) {
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.id = `para-${id}`;
+                svg.setAttribute('class', 'sprite parachutist');
+                svg.setAttribute('viewBox', '0 0 18 24');
+                svg.style.position = 'absolute';
+                svg.style.left = this.getLanePosition(lane);
+                svg.style.top = this.positions[0];
+
+                // Parachute - forme très simple en dôme
+                const canopy = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                canopy.setAttribute('class', 'lcd-segment');
+                canopy.setAttribute('d', 'M 3,5 Q 9,1 15,5 L 14,7 L 4,7 Z');
+
+                // Tête - petit cercle
+                const head = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                head.setAttribute('class', 'lcd-segment');
+                head.setAttribute('cx', '9'); head.setAttribute('cy', '11');
+                head.setAttribute('r', '1.5');
+
+                // Corps + bras + jambes - tout en lignes simples (bonhomme-bâton)
+                const stickman = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                stickman.setAttribute('stroke', '#2a2a2a');
+                stickman.setAttribute('stroke-width', '1.5');
+                stickman.setAttribute('fill', 'none');
+                // Bras levés + corps + jambes
+                stickman.setAttribute('d', 'M 6,9 L 9,13 L 12,9 M 9,13 L 9,18 M 9,18 L 6,22 M 9,18 L 12,22');
+
+                svg.appendChild(canopy);
+                svg.appendChild(head);
+                svg.appendChild(stickman);
+
+                document.getElementById('gameCanvas').appendChild(svg);
+            },
+
+            getLanePosition(lane) {
+                const positions = { left: '10%', center: '45%', right: '80%' };
+                return positions[lane];
+            },
+
+            update() {
+                if (this.gameOver) return;
+
+                // Move all parachutists down one position
+                this.parachutists.forEach(para => {
+                    para.position++;
+                    const element = document.getElementById(`para-${para.id}`);
+
+                    if (para.position >= this.positions.length) {
+                        // Reached bottom - check for catch
+                        if (para.lane === this.boatPosition) {
+                            // Caught!
+                            this.score++;
+                            this.updateDisplay();
+                            this.checkSpeedIncrease();
+                            this.playSound('catch');
+                        } else {
+                            // Missed!
+                            this.lives--;
+                            this.updateDisplay();
+                            this.showShark(para.lane);
+                            this.playSound('miss');
+
+                            if (this.lives <= 0) {
+                                this.endGame();
+                            }
+                        }
+
+                        // Remove parachutist
+                        element.remove();
+                        this.parachutists = this.parachutists.filter(p => p.id !== para.id);
+                    } else {
+                        // Update position
+                        element.style.top = this.positions[para.position];
+                    }
+                });
+            },
+
+
+            showShark(lane) {
+                const shark = document.getElementById(`shark-${lane}`);
+                shark.classList.add('show');
+                setTimeout(() => shark.classList.remove('show'), 1000);
+            },
+
+            checkSpeedIncrease() {
+                if (this.score % 10 === 0 && this.score > 0) {
+                    this.tickSpeed = Math.max(100, this.tickSpeed - 20);
+                    clearInterval(this.gameLoop);
+                    this.gameLoop = setInterval(() => this.update(), this.tickSpeed);
+                }
+            },
+
+            updateDisplay() {
+                updateSevenSegmentDisplay(this.score);
+            },
+
+            endGame() {
+                this.gameOver = true;
+                clearInterval(this.gameLoop);
+                clearInterval(this.spawnLoop);
+
+                // Update high score
+                if (this.score > this.highScore) {
+                    this.highScore = this.score;
+                    localStorage.setItem('parachuteHighScore', this.highScore);
+                }
+
+                document.getElementById('finalScore').textContent = this.score;
+                document.getElementById('highScore').textContent = this.highScore;
+                document.getElementById('gameOver').classList.add('show');
+                this.playSound('gameOver');
+            },
+
+            restart() {
+                // Clear existing parachutists
+                this.parachutists.forEach(para => {
+                    const element = document.getElementById(`para-${para.id}`);
+                    if (element) element.remove();
+                });
+
+                // Reset game state
+                this.score = 0;
+                this.lives = 3;
+                this.boatPosition = 'center';
+                this.parachutists = [];
+                this.nextId = 0;
+                this.tickSpeed = 350;
+                this.gameOver = false;
+
+                // Reset boat position
+                const boat = document.getElementById('boat');
+                boat.className = 'sprite boat center';
+
+                // Hide game over screen
+                document.getElementById('gameOver').classList.remove('show');
+
+                // Update display
+                this.updateDisplay();
+
+                // Restart game loops
+                this.startGame();
+            },
+
+            playSound(type) {
+                // Simple beep sounds using Web Audio API
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                // Different frequencies for different events
+                const frequencies = {
+                    catch: 800,
+                    miss: 200,
+                    gameOver: 150
+                };
+
+                oscillator.frequency.value = frequencies[type] || 400;
+                oscillator.type = 'square';
+
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.1);
+            }
+        };
+
+        // Start game when page loads
+        window.addEventListener('load', () => game.init());
+    </script>
+</body>
+</html>

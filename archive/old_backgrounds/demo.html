@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sprites Parachute Game & Watch - Démo</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Courier New', monospace;
+            color: white;
+        }
+
+        h1 {
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .canvas-wrapper {
+            background: #dcd5b0;
+            border: 8px solid #8b7355;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            max-width: 800px;
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            background: #c8c3a0;
+            border: 2px solid #5a4a3a;
+        }
+
+        .info {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .sprite-section {
+            margin: 30px 0;
+        }
+
+        h2 {
+            color: #ffd700;
+            border-bottom: 2px solid #ffd700;
+            padding-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Nintendo Game & Watch - Parachute (1981)</h1>
+        <h2 style="text-align: center; border: none;">Démo des Sprites Extraits</h2>
+
+        <div class="info">
+            <p>✅ <strong>68 sprites PCX</strong> extraits et convertis</p>
+            <p>🎨 Format: Tableaux JavaScript binaires</p>
+            <p>📦 Fichier: <code>parachute-sprites.js</code></p>
+        </div>
+
+        <div class="canvas-wrapper">
+            <h3 style="color: #333; text-align: center; margin-top: 0;">Aperçu des Sprites</h3>
+            <canvas id="spriteCanvas" width="700" height="600"></canvas>
+        </div>
+    </div>
+
+    <script src="parachute-sprites.js"></script>
+    <script>
+        const canvas = document.getElementById('spriteCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const LCD_COLOR = '#1a1a0f';
+        const SCALE = 3;
+
+        let x = 50;
+        let y = 30;
+
+        // Dessiner les chiffres 0-9
+        ctx.font = '14px Arial';
+        ctx.fillStyle = '#333';
+        ctx.fillText('Chiffres (0-9):', 10, 20);
+
+        x = 50;
+        y = 30;
+        ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'].forEach((digit, i) => {
+            ParachuteSprites.draw(ctx, `digits.${digit}`, x, y, SCALE, LCD_COLOR);
+            x += 35;
+        });
+
+        // Dessiner les bateaux
+        y += 60;
+        x = 50;
+        ctx.fillText('Bateaux (3 positions):', 10, y - 10);
+        ['lboat', 'mboat', 'rboat'].forEach(boat => {
+            ParachuteSprites.draw(ctx, `boats.${boat}`, x, y, SCALE, LCD_COLOR);
+            x += 120;
+        });
+
+        // Dessiner animation parachutiste gauche
+        y += 100;
+        x = 30;
+        ctx.fillText('Animation Parachutiste Gauche (7 frames):', 10, y - 10);
+        for (let i = 1; i <= 7; i++) {
+            ParachuteSprites.draw(ctx, `parachutists_left.lpar${i}`, x, y, SCALE, LCD_COLOR);
+            x += 80;
+        }
+
+        // Dessiner animation parachutiste milieu
+        y += 100;
+        x = 30;
+        ctx.fillText('Animation Parachutiste Milieu (6 frames):', 10, y - 10);
+        for (let i = 1; i <= 6; i++) {
+            ParachuteSprites.draw(ctx, `parachutists_middle.mpar${i}`, x, y, SCALE, LCD_COLOR);
+            x += 90;
+        }
+
+        // Dessiner animation parachutiste droite
+        y += 100;
+        x = 30;
+        ctx.fillText('Animation Parachutiste Droite (5 frames):', 10, y - 10);
+        for (let i = 1; i <= 5; i++) {
+            ParachuteSprites.draw(ctx, `parachutists_right.rpar${i}`, x, y, SCALE, LCD_COLOR);
+            x += 100;
+        }
+
+        // Dessiner les requins
+        y += 100;
+        x = 30;
+        ctx.fillText('Requins (6 frames animation):', 10, y - 10);
+        for (let i = 1; i <= 6; i++) {
+            ParachuteSprites.draw(ctx, `sharks.shark${i}`, x, y, SCALE, LCD_COLOR);
+            x += 100;
+        }
+
+        // Dessiner les arbres
+        y += 80;
+        x = 50;
+        ctx.fillText('Arbres:', 10, y - 10);
+        ParachuteSprites.draw(ctx, 'trees.treeParL', x, y, SCALE, LCD_COLOR);
+        ParachuteSprites.draw(ctx, 'trees.treeParR', x + 80, y, SCALE, LCD_COLOR);
+
+        console.log('✅ Sprites Parachute chargés et affichés !');
+        console.log('📦 Sprites disponibles:', ParachuteSprites);
+    </script>
+</body>
+</html>

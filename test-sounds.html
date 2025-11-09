@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Test Sons Authentiques</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #2a2a2a;
+            color: #fff;
+        }
+        button {
+            margin: 10px;
+            padding: 15px 30px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #log {
+            margin-top: 20px;
+            padding: 10px;
+            background: #1a1a1a;
+            border: 1px solid #444;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎵 Test Sons Authentiques Game & Watch</h1>
+
+    <div>
+        <button onclick="testSound('got')">Jouer GOT.WAV</button>
+        <button onclick="testSound('miss1')">Jouer MISS1.WAV</button>
+        <button onclick="testSound('miss2')">Jouer MISS2.WAV</button>
+        <button onclick="testSound('miss3')">Jouer MISS3.WAV</button>
+        <button onclick="testSound('tick')">Jouer TICK.WAV</button>
+    </div>
+
+    <div id="log"></div>
+
+    <script>
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const buffers = {};
+
+        function log(msg) {
+            const logDiv = document.getElementById('log');
+            logDiv.innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(msg);
+        }
+
+        async function loadSound(name) {
+            try {
+                log(`Chargement de ${name}.wav...`);
+                const response = await fetch(`sounds/${name}.wav`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const arrayBuffer = await response.arrayBuffer();
+                log(`  → ${arrayBuffer.byteLength} bytes reçus`);
+
+                buffers[name] = await audioContext.decodeAudioData(arrayBuffer);
+                log(`  ✓ ${name} chargé (${buffers[name].duration.toFixed(2)}s, ${buffers[name].sampleRate}Hz)`);
+                return true;
+            } catch (e) {
+                log(`  ✗ Erreur ${name}: ${e.message}`);
+                return false;
+            }
+        }
+
+        async function loadAllSounds() {
+            log('=== DÉBUT CHARGEMENT ===');
+            const sounds = ['got', 'miss1', 'miss2', 'miss3', 'tick'];
+
+            for (const sound of sounds) {
+                await loadSound(sound);
+            }
+
+            log('=== CHARGEMENT TERMINÉ ===');
+        }
+
+        function testSound(name) {
+            if (!buffers[name]) {
+                log(`⚠️ Son ${name} pas chargé !`);
+                return;
+            }
+
+            try {
+                const source = audioContext.createBufferSource();
+                const gainNode = audioContext.createGain();
+
+                source.buffer = buffers[name];
+                source.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                gainNode.gain.value = 0.5;
+                source.start(0);
+
+                log(`▶ Lecture ${name}.wav`);
+            } catch (e) {
+                log(`✗ Erreur lecture ${name}: ${e.message}`);
+            }
+        }
+
+        // Charger au démarrage
+        window.addEventListener('load', () => {
+            log('Page chargée, AudioContext prêt');
+            loadAllSounds();
+        });
+    </script>
+</body>
+</html>
